@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: 0001-create-posts-table.yaml
+      relativeToChangelogFile: true
