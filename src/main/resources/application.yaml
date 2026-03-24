@@ -31,3 +31,7 @@ spring:
 
 server:
   port: ${APP_PORT}
+
+cache:
+  post:
+    redis-ttl: 10m
