@@ -91,46 +91,6 @@ class RedisTemplateApplicationTests {
 		assertThat(secondGetResponse.getBody().tags()).isEqualTo("java,spring,redis");
 	}
 
-
-	@Test
-	void deleteRemovesCacheAndPostBecomesUnavailable() throws Exception {
-		Map<String, Object> createRequest = Map.of(
-				"title", "First post",
-				"body", "Hello",
-				"status", "DRAFT",
-				"tags", "java,spring,redis"
-		);
-
-		ResponseEntity<PostResponse> createResponse =
-				restTemplate.postForEntity("/posts", createRequest, PostResponse.class);
-
-		assertThat(createResponse.getStatusCode().value()).isEqualTo(201);
-		assertThat(createResponse.getBody()).isNotNull();
-		assertThat(createResponse.getBody().id()).isNotNull();
-
-		Long postId = createResponse.getBody().id();
-		String cacheKey = "post:id:" + postId;
-
-		ResponseEntity<PostResponse> firstGetResponse =
-				restTemplate.getForEntity("/posts/" + postId, PostResponse.class);
-
-		assertThat(firstGetResponse.getStatusCode().value()).isEqualTo(200);
-
-		var keyAfterWarmup = redis.execInContainer("redis-cli", "EXISTS", cacheKey);
-		assertThat(keyAfterWarmup.getStdout().trim()).isEqualTo("1");
-
-		restTemplate.delete("/posts/" + postId);
-
-		var keyAfterDelete = redis.execInContainer("redis-cli", "EXISTS", cacheKey);
-		assertThat(keyAfterDelete.getStdout().trim()).isEqualTo("0");
-
-		ResponseEntity<String> getAfterDeleteResponse =
-				restTemplate.getForEntity("/posts/" + postId, String.class);
-
-		assertThat(getAfterDeleteResponse.getStatusCode().value()).isEqualTo(404);
-	}
-
-
 	@Test
 	void updateInvalidatesCacheAndNextGetRebuildsIt() throws Exception {
 		Map<String, Object> createRequest = Map.of(
@@ -183,5 +143,43 @@ class RedisTemplateApplicationTests {
 
 		var keyAfterSecondGet = redis.execInContainer("redis-cli", "EXISTS", cacheKey);
 		assertThat(keyAfterSecondGet.getStdout().trim()).isEqualTo("1");
+	}
+
+	@Test
+	void deleteRemovesCacheAndPostBecomesUnavailable() throws Exception {
+		Map<String, Object> createRequest = Map.of(
+				"title", "First post",
+				"body", "Hello",
+				"status", "DRAFT",
+				"tags", "java,spring,redis"
+		);
+
+		ResponseEntity<PostResponse> createResponse =
+				restTemplate.postForEntity("/posts", createRequest, PostResponse.class);
+
+		assertThat(createResponse.getStatusCode().value()).isEqualTo(201);
+		assertThat(createResponse.getBody()).isNotNull();
+		assertThat(createResponse.getBody().id()).isNotNull();
+
+		Long postId = createResponse.getBody().id();
+		String cacheKey = "post:id:" + postId;
+
+		ResponseEntity<PostResponse> firstGetResponse =
+				restTemplate.getForEntity("/posts/" + postId, PostResponse.class);
+
+		assertThat(firstGetResponse.getStatusCode().value()).isEqualTo(200);
+
+		var keyAfterWarmup = redis.execInContainer("redis-cli", "EXISTS", cacheKey);
+		assertThat(keyAfterWarmup.getStdout().trim()).isEqualTo("1");
+
+		restTemplate.delete("/posts/" + postId);
+
+		var keyAfterDelete = redis.execInContainer("redis-cli", "EXISTS", cacheKey);
+		assertThat(keyAfterDelete.getStdout().trim()).isEqualTo("0");
+
+		ResponseEntity<String> getAfterDeleteResponse =
+				restTemplate.getForEntity("/posts/" + postId, String.class);
+
+		assertThat(getAfterDeleteResponse.getStatusCode().value()).isEqualTo(404);
 	}
 }

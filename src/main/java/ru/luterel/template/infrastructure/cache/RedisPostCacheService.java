@@ -1,6 +1,7 @@
 package ru.luterel.template.infrastructure.cache;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RedisPostCacheService implements PostCacheService {
 
     private final StringRedisTemplate stringRedisTemplate;
@@ -23,7 +25,8 @@ public class RedisPostCacheService implements PostCacheService {
 
     @Override
     public Optional<PostResponse> getById(Long id) {
-        String json = stringRedisTemplate.opsForValue().get(buildKey(id));
+        String key = buildKey(id);
+        String json = stringRedisTemplate.opsForValue().get(key);
 
         if (json == null) {
             return Optional.empty();
@@ -33,19 +36,20 @@ public class RedisPostCacheService implements PostCacheService {
             PostResponse post = objectMapper.readValue(json, PostResponse.class);
             return Optional.of(post);
         } catch (JacksonException e) {
-//            throw new IllegalStateException("Failed to read post from redis cache", e);
-            stringRedisTemplate.delete(buildKey(id));
+            log.warn("Failed to deserialize cache value for key {}", key, e);
+            stringRedisTemplate.delete(key);
             return Optional.empty();
         }
     }
 
     @Override
     public void put(PostResponse post) {
+        String key = buildKey(post.id());
         try {
             String json = objectMapper.writeValueAsString(post);
-            stringRedisTemplate.opsForValue().set(buildKey(post.id()), json, postTtl);
+            stringRedisTemplate.opsForValue().set(key, json, postTtl);
         } catch (JacksonException e) {
-//            throw new IllegalStateException("Failed to write post to redis cache", e);
+            log.warn("Failed to serialize cache value for key {}", key, e);
         }
     }
 

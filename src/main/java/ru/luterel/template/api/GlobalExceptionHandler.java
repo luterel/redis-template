@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ValidationErrorResponse handleValidation(MethodArgumentNotValidException exception)  {
+    public ValidationErrorResponse handleValidation(MethodArgumentNotValidException exception) {
         List<FieldValidationError> errors = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -65,9 +65,6 @@ public class GlobalExceptionHandler {
                 Instant.now()
         );
     }
-
-
-
 
     private FieldValidationError mapFieldError(FieldError fieldError) {
         return new FieldValidationError(
