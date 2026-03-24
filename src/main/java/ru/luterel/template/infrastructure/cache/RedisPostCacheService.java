@@ -33,7 +33,9 @@ public class RedisPostCacheService implements PostCacheService {
             PostResponse post = objectMapper.readValue(json, PostResponse.class);
             return Optional.of(post);
         } catch (JacksonException e) {
-            throw new IllegalStateException("Failed to read post from redis cache", e);
+//            throw new IllegalStateException("Failed to read post from redis cache", e);
+            stringRedisTemplate.delete(buildKey(id));
+            return Optional.empty();
         }
     }
 
@@ -43,7 +45,7 @@ public class RedisPostCacheService implements PostCacheService {
             String json = objectMapper.writeValueAsString(post);
             stringRedisTemplate.opsForValue().set(buildKey(post.id()), json, postTtl);
         } catch (JacksonException e) {
-            throw new IllegalStateException("Failed to write post to redis cache", e);
+//            throw new IllegalStateException("Failed to write post to redis cache", e);
         }
     }
 

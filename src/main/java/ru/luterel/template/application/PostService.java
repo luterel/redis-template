@@ -33,7 +33,7 @@ public class PostService {
     public PostResponse getById(Long id) {
         Optional<PostResponse> cachedPost = postCacheService.getById(id);
 
-        if(cachedPost.isPresent()) {
+        if (cachedPost.isPresent()) {
             return cachedPost.get();
         }
 
